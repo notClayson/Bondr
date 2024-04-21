@@ -1,0 +1,116 @@
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+@inject HttpClient _client
+@inject IJSRuntime js
+@inject IJSRuntime JSRuntime
+
+<!-- Customised Nav Menu with different views for each Authorisation -->
+
+<div class="@NavMenuCssClass nav-scrollable">
+    <nav class="flex-column">
+        <AuthorizeView Roles="User">
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="authentication/profile" Match="NavLinkMatch.All">
+                        <p class="oi" aria-hidden="true">@visitor.Username</p>
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="#" @onclick="BeginLogOut" Match="NavLinkMatch.All">
+                        <p class="oi" aria-hidden="true">Log out</p>
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                        <p class="oi" aria-hidden="true">Home</p>
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/communities/">
+                        <p class="oi" aria-hidden="true">Communities</p>
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="subscribe">
+                        <p class="oi" aria-hidden="true">Subscriptions</p>
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="settings">
+                        <p class="oi" aria-hidden="true">Settings</p>
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+        <AuthorizeView Roles="Admin">
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="authentication/profile" Match="NavLinkMatch.All">
+                        <p class="oi" aria-hidden="true">Account</p>
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="#" @onclick="BeginLogOut" Match="NavLinkMatch.All">
+                        <p class="oi" aria-hidden="true">Log out</p>
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/admin">
+                        <p class="oi" aria-hidden="true">Admin</p>
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/admin/staffs">
+                        <p class="oi" aria-hidden="true">Staff</p>
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+        <AuthorizeView roles ="Admin, User">
+            <NotAuthorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="authentication/register" Match="NavLinkMatch.All">
+                        <p class="oi" aria-hidden="true">Register</p>
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="authentication/login" Match="NavLinkMatch.All">
+                        <p class="oi" aria-hidden="true">Log in</p>
+                    </NavLink>
+                </div>
+            </NotAuthorized>
+        </AuthorizeView>
+    </nav>
+</div>
+
+@code {
+    private bool collapseNavMenu = false;
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+    private IList<Visitor>? Visitors;
+    private Visitor visitor = new Visitor();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            Visitors = await _client.GetFromJsonAsync<List<Visitor>>($"{Endpoints.VisitorEndpoint}");
+            visitor = Visitors.FirstOrDefault(item => item.Email == user.Identity?.Name) ?? new Visitor();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("User not logged in yet.");
+        }
+    }
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+    private void BeginLogOut(MouseEventArgs args)
+    {
+        Navigation.NavigateToLogout("authentication/logout", "/");
+    }
+}

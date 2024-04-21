@@ -1,0 +1,41 @@
+﻿.container {
+    box-sizing: border-box;
+    border-width: 1px 1px 0 1px;
+    border-style: solid;
+    border-color: #26001B;
+    overflow: hidden;
+    position: relative;
+    background: linear-gradient(to bottom, #210429, #3b064a);
+    box-shadow: #40022e 3px 1px 20px;
+    padding: 20px;
+    display: block;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+    .table th,
+    .table td {
+        padding: 8px;
+        text-align: left;
+        border: 1px solid #ddd;
+    }
+
+    .table th {
+        background-color: #333;
+        color: white;
+    }
+
+    .table td {
+        color: white;
+        font-family: 'Comic Sans MS', cursive;
+    }
+
+h3 {
+    text-align: center;
+    color: white;
+    font-family: 'Comic Sans MS', cursive;
+}

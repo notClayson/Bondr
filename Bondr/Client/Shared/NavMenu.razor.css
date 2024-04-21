@@ -1,0 +1,57 @@
+.flex-column {
+    width: 200px;
+    overflow: hidden;
+}
+
+p {
+    font-family: "Trebuchet MS", sans-serif;
+    font-size: 18px;
+}
+
+.oi {
+    text-align: center;
+    margin: 0; /* Remove any default margin */
+    font-weight: 200; /* Adjusted font-weight value */
+    line-height: 1.5; /* Adjust line-height as needed for vertical centering */
+}
+
+.nav-item {
+    font-size: 0.9rem;
+    padding: 5px;
+    align-self: flex-start;
+}
+    .nav-item ::deep a {
+        color: #d7d7d7;
+        border-radius: 4px;
+        height: 3rem;
+        display: flex;
+        align-items: center;
+        line-height: 3rem;
+        height: 3rem;
+    }
+        .nav-item ::deep a.active {
+            background-color: rgba(255,255,255,0.25);
+            color: white;
+        }
+
+        .nav-item ::deep a:hover {
+            background-color: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+@media (min-width: 641px) {
+    .navbar-toggler {
+        display: none;
+    }
+
+    .collapse {
+        /* Never collapse the sidebar for wide screens */
+        display: block;
+    }
+
+    .nav-scrollable {
+        /* Allow sidebar to scroll for tall menus */
+        height: calc(100vh - 3.5rem);
+        overflow-y: auto;
+    }
+}

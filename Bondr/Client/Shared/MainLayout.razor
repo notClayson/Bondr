@@ -1,0 +1,17 @@
+﻿@inherits LayoutComponentBase
+<link rel="stylesheet" href="css/style.css">
+
+
+<div class="page">
+    <div class="navbar">
+        <NavMenu/>
+    </div>
+    <div class="search"> <!-- Add searchbar in -->
+        <TopSearchbar />
+    </div>
+    <main>
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>

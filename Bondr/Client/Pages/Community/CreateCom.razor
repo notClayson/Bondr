@@ -1,0 +1,192 @@
+﻿@page "/communities/createcommunity"
+
+@inject HttpClient _client
+@inject NavigationManager _navManager
+@inject IJSRuntime js
+<!-- For IDisposable Error Handling-->
+@inject HttpInterceptorService _interceptor
+@implements IDisposable
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+
+<!-- Container for creating a new community -->
+<div id="container">
+    <!-- Heading for creating a new community -->
+    <h3 class="card-title">Create New Community</h3>
+    <hr />
+    <br />
+
+    <!-- EditForm for community creation with validation -->
+    <EditForm Model="@community" OnValidSubmit="CreateCommunity">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <!-- Form group for community name -->
+        <div class="form-group">
+            <label>Name: </label>
+            <div>
+                <InputText @bind-Value="@community.Name" class="form-control" />
+                <ValidationMessage For="@(() => community.Name)" />
+            </div>
+        </div>
+
+        <!-- Form group for community description -->
+        <div class="form-group">
+            <label>Description: </label>
+            <div>
+                <InputText @bind-Value="@community.Description" class="form-control" />
+                <ValidationMessage For="@(() => community.Description)" />
+            </div>
+        </div>
+
+        <!-- Dropdown list for staff selection -->
+        <div class="form-group">
+            <label>Assign Staff: </label>
+            <div>
+                <select @bind="community.StaffId" class="form-control">
+                    <option value="">Select Staff</option>
+                    <!-- Iterate through existing staff and create options -->
+                    @foreach (var staff in existingStaff)
+                    {
+                        <option value="@staff.Id">@staff.Name</option>
+                    }
+                </select>
+                <ValidationMessage For="@(() => community.StaffId)" />
+            </div>
+        </div>
+
+        <br />
+        <br />
+
+        <!-- Button to submit the form and create the community -->
+        <button type="submit" class="btn btn-success btn-block">
+            Create Community
+        </button>
+    </EditForm>
+</div>
+
+@code {
+    <!-- Initialize a new Community object -->
+    Community community = new Community();
+    <!-- Lists to store existing communities and staff -->
+    List<Community> existingCommunities = new List<Community>();
+    List<Staff> existingStaff = new List<Staff>();
+    private List<Subscription> Subscriptions;
+    private List<Subscription> UserSubscriptions = new List<Subscription>();
+    private Subscription subscription = new Subscription();
+    private IList<Visitor> Visitors;
+    private Visitor visitor;
+
+    // This section is to handle authorization of pages
+    private List<System.Security.Claims.Claim> UserClaims;
+    private bool IsAdmin,IsUser;
+
+    <!-- Method called when the component is initialized -->
+    protected override async Task OnInitializedAsync()
+    {
+        _interceptor.MonitorEvent(); // Monitor Events
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        <!-- Fetch existing communities and staff from the server -->
+        existingCommunities = await _client.GetFromJsonAsync<List<Community>>(Endpoints.CommunityEndpoint);
+        existingStaff = await _client.GetFromJsonAsync<List<Staff>>(Endpoints.StaffEndpoint);
+        Subscriptions = await _client.GetFromJsonAsync<List<Subscription>>($"{Endpoints.SubscriptionEndpoint}");
+        
+        // Check first if user is authorized
+        UserClaims = user.Claims.ToList();
+        IsAdmin = user.IsInRole("Admin");  //Get user role
+        IsUser = user.IsInRole("User");  //Get user role
+
+        if (!(IsAdmin || IsUser))
+        {
+            _navManager.NavigateTo("/unauthorized"); // Kick out the unauthorized hackers!!
+        }
+
+        <!-- Fetch visitors, communities, subscriptions, and initialize the visitor variable -->
+        Visitors = await _client.GetFromJsonAsync<List<Visitor>>($"{Endpoints.VisitorEndpoint}");
+        visitor = Visitors.FirstOrDefault(item => item.Email == user.Identity?.Name);
+    
+    
+    }
+
+    <!-- Method to create a new community -->
+    private async Task CreateCommunity()
+    {
+        // Check for duplicate community name
+        if (IsCommunityNameDuplicate())
+        {
+            // Handle duplicate name (show an alert, validation message, etc.)
+            await js.InvokeAsync<object>("alert", "Duplicate community name. Please choose a different name.");
+        }
+        else
+        {
+            <!-- Send a POST request to the server to create the community -->
+            await _client.PostAsJsonAsync(Endpoints.CommunityEndpoint, community);
+            <!-- Subscribe the user to the newly created community -->
+            await SubscribeToNewlyCreatedCommunity();
+            <!-- Navigate to the communities page after successful creation -->
+            _navManager.NavigateTo("/communities/");
+        }
+        
+    }
+    <!-- Method to subscribe the user to the newly created community -->
+    private async Task SubscribeToNewlyCreatedCommunity()
+    {
+        <!-- Fetch the newly created community -->
+        var newlyCreatedCommunity = (await _client.GetFromJsonAsync<List<Community>>(Endpoints.CommunityEndpoint))
+            .FirstOrDefault(c => c.Name == community.Name && c.Description == community.Description && c.StaffId == community.StaffId);
+
+        if (newlyCreatedCommunity != null)
+        {
+            <!-- Subscribe the user to the newly created community -->
+            await Subscribe(newlyCreatedCommunity.Id);
+        }
+    }
+
+    <!-- Method to handle community subscription -->
+    private async Task Subscribe(int communityId)
+    {
+        <!-- Set user and community information in the subscription instance -->
+        subscription.UserId = visitor.Id;
+        subscription.CommunityId = communityId;
+
+        <!-- Send a POST request to subscribe to the community -->
+        var response = await _client.PostAsJsonAsync($"{Endpoints.SubscriptionEndpoint}", subscription);
+
+        <!-- Check the response status and display appropriate alerts -->
+        if (response.IsSuccessStatusCode)
+        {
+            await js.InvokeAsync<object>("alert", "Successfully created community.");
+            await OnInitializedAsync();
+        }
+        else
+        {
+            await js.InvokeAsync<object>("alert", "Failed to create community. Please try again.");
+        }
+    }
+    <!-- Method to check if the community name is a duplicate -->
+    private bool IsCommunityNameDuplicate()
+    {
+        // Iterate through existing communities to check for duplicates
+        foreach (var existingCommunity in existingCommunities)
+        {
+            // Check if the name of the existing community is not null and equals the new community's name
+            if (existingCommunity.Name != null &&
+                existingCommunity.Name.Equals(community.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                // If a duplicate is found, return true
+                return true;
+            }
+        }
+
+        // If no duplicate is found, return false
+        return false;
+    }
+    <!-- Method called when the component is disposed -->
+    public void Dispose()
+    {
+        _interceptor.DisposeEvent();
+    }
+}

@@ -1,0 +1,143 @@
+﻿#container {
+    width: 500px;
+    height: 500px;
+    box-sizing: border-box;
+    justify-content: center;
+    border-width: 1px 1px 0 1px;
+    border-style: solid;
+    border-color: #26001B;
+    overflow: hidden;
+    background: linear-gradient(to bottom, #210429, #3b064a);
+    box-shadow: #40022e 3px 1px 20px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    margin: auto;
+}
+
+h1 {
+    color: white;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+
+.post {
+    max-width: 500px;
+    max-height: 500px;
+    padding: 20px;
+}
+
+.genreName {
+    width: 450px;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    font-size: 18px;
+    border: 2px solid #FF005C;
+    border-radius: 5px;
+}
+
+.genreDesc {
+    width: 450px;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    font-size: 18px;
+    border: 2px solid #FF005C;
+    border-radius: 5px;
+}
+
+.publish {
+    margin-top: 10px;
+    padding: 10px 15px;
+    background: #e69812;
+    font-family: Inter, Helvetica, "Apple Color Emoji", "Segoe UI Emoji", NotoColorEmoji, "Noto Color Emoji", "Segoe UI Symbol", "Android Emoji", EmojiSymbols, -apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", sans-serif;
+    font-size: large;
+    font-weight: 700;
+    border: 2px solid #FF005C;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+    .publish:hover {
+        box-shadow: #00A9FF 0px 0px 3px 4px;
+    }
+
+.delete {
+    margin-top: 10px;
+    padding: 10px 15px;
+    background: red;
+    font-family: "Noto Sans", sans-serif;
+    font-size: large;
+    width:150px;
+    font-weight: 700;
+    border: 2px solid white;
+    border-radius: 5px;
+    cursor: pointer;
+    color: white;
+}
+
+    .delete:hover {
+        box-shadow: #f97a7a 0px 0px 3px 4px;
+    }
+
+.post {
+    max-width: 500px;
+    max-height: 500px;
+    padding: 20px;
+}
+
+.post-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+    .post-header h1, .post-header button {
+        margin: 10px; /* Optional: Add some spacing around the elements */
+    }
+
+.postGenreDropdown {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    font-size: 18px;
+    border: 2px solid #FF005C;
+    border-radius: 5px;
+}
+
+.options {
+    display: flex;
+    justify-content: center;
+}
+
+#togglecreate, #toggleedit {
+    border: solid 2px white;
+    background: transparent;
+    color: white;
+    font-family: "Noto Sans", sans-serif;
+    font-size: large;
+    font-weight: 700;
+    padding: 10px;
+    border-radius: 2px;
+    margin: 5px;
+    align-content: center;
+}
+    #togglecreate:disabled, #toggleedit:disabled {
+        color: gray;
+        border: solid 2px gray;
+    }

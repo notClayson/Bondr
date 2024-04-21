@@ -1,0 +1,113 @@
+﻿@page "/admin/visitors"
+
+@inject HttpClient _client
+<!-- For IDisposable Error Handling-->
+@inject HttpInterceptorService _interceptor
+@implements IDisposable
+@inject IJSRuntime js
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager _navManager
+
+<!-- Display a message if no visitors are found, else show a table with visitor information -->
+@if (Visitors == null || !Visitors.Any())
+{
+    <div class="alert alert-info">No Visitors...</div>
+}
+else
+{
+    <!-- Container for visitor list -->
+    <div class="container">
+        <!-- Heading for the visitor list -->
+        <h3>Visitor List</h3>
+
+        <!-- Table to display visitor details -->
+        <table class="table">
+            <thead>
+                <!-- Table header with column names -->
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Age</th>
+                    <th>Current Communities</th> <!-- Updated column name -->
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Iterate through each visitor and display their details -->
+                @foreach (var visitor in Visitors)
+                {
+                    <tr>
+                        <td>@visitor.Id</td>
+                        <td>@visitor.Username</td>
+                        <td>@visitor.Email</td>
+                        <td>@visitor.Age</td>
+                        <td>@string.Join(", ", GetVisitorCommunities(visitor.Id).Select(c => c.Name))</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+
+@code {
+    <!-- Declare private variables -->
+    private IList<Visitor>? Visitors;
+    private List<Subscription> Subscriptions;
+    private List<Community> Communities;
+    
+    // This section is to handle authorization of pages
+    private List<System.Security.Claims.Claim> UserClaims;
+    private bool IsAdmin;
+
+    <!-- Method called when the page is initialized -->
+    protected override async Task OnInitializedAsync()
+    {
+        _interceptor.MonitorEvent(); // Monitor Events
+
+        // Get curr user
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        // Check first if user is authorized
+        UserClaims = user.Claims.ToList();
+        IsAdmin = user.IsInRole("Admin");  //Get user role
+
+        if (!IsAdmin)
+        {
+            _navManager.NavigateTo("/unauthorized"); // Kick out the unauthorized hackers!!
+        }
+
+        <!-- Fetch Visitors, Subscriptions, and Communities from the server -->
+        Visitors = await _client.GetFromJsonAsync<List<Visitor>>($"{Endpoints.VisitorEndpoint}");
+        Subscriptions = await _client.GetFromJsonAsync<List<Subscription>>($"{Endpoints.SubscriptionEndpoint}");
+        Communities = await _client.GetFromJsonAsync<List<Community>>($"{Endpoints.CommunityEndpoint}");
+    }
+
+    <!-- Method called when the component is disposed -->
+    public void Dispose()
+    {
+        _interceptor.DisposeEvent();
+    }
+
+    private List<Community> GetVisitorCommunities(int visitorId)
+    {
+        var visitorCommunities = new List<Community>();
+
+        foreach (var community in Communities)
+        {
+            foreach (var subscription in Subscriptions)
+            {
+                // Check if there is a subscription for the specific visitor and community
+                if (subscription.UserId == visitorId && subscription.CommunityId == community.Id)
+                {
+                    visitorCommunities.Add(community);
+                    break; // Break the inner loop since the community is already added
+                }
+            }
+        }
+
+        return visitorCommunities;
+    }
+
+}

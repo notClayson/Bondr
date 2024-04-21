@@ -1,0 +1,131 @@
+﻿@page "/feed/newpost"
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager _navManager
+@inject HttpClient _client
+@inject HttpInterceptorService _interceptor
+@implements IDisposable
+
+<EditForm Model="@post" OnValidSubmit="CreatePost">
+    <DataAnnotationsValidator /> <!-- To ensure proper format when posting -->
+    <ValidationSummary />
+
+    <div id="container">
+        <div class="post">
+            <div class="post-header">
+                <h1>NEW POST</h1>
+                <input type="text" class="postTitle" @bind="post.Title" placeholder="Enter Post Title">
+                <select class="postGenreDropdown" @bind="post.GenreId" @oninput="UpdateGenreId">
+                    <!-- Show genres -->
+                    @if (Genres != null && Genres.Any()) 
+                    {
+                        foreach (var genre in Genres)
+                        {
+                            <option value="@genre.Id">@genre.Name</option>
+                        }
+                    }
+                </select>
+                <!-- Show Communities -->
+                <select class="postGenreDropdown" @bind="post.CommunityId" @oninput="UpdateCommunityId">
+                    @if (Communities != null && Communities.Any())
+                    {
+                        foreach (var community in Communities)
+                        {
+                            <option value="@community.Id">@community.Name</option>
+                        }
+                    }
+                </select>
+                <div class="post-content">
+                    <textarea class="postParagraph" @bind="post.Content" placeholder="Enter Post Paragraph (2000 characters max)" maxlength="2000"></textarea>
+                </div>
+                <button type="submit" class="publish">Create</button> <!-- Submit form -->
+            </div>
+        </div>
+    </div>
+</EditForm>
+
+<div hidden> <!-- This div is here because of a strange issue with browser cache. It remains here just in case-->
+    @code {
+        Post post = new Post();
+        private IList<Genre>? Genres;
+        private IList<Post>? Posts;
+        private IList<Visitor>? Visitors;
+        private IList<Community>? Communities;
+        private Visitor visitor;
+
+        // This section is to handle authorization of pages
+        private List<System.Security.Claims.Claim> UserClaims;
+        private bool IsAdmin;
+
+        private async void UpdateGenreId(ChangeEventArgs e)
+        {
+            if (int.TryParse(e.Value.ToString(), out var genreId))
+            {
+                post.GenreId = genreId;
+            }
+        }
+        private async void UpdateCommunityId(ChangeEventArgs e)
+        {
+            if (int.TryParse(e.Value.ToString(), out var communityId))
+            {
+                post.CommunityId = communityId;
+            }
+        }
+
+        protected async override Task OnInitializedAsync()
+        {
+            _interceptor.MonitorEvent(); // Monitor Events
+
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            // Check first if user is authorized
+            UserClaims = user.Claims.ToList();
+            IsAdmin = user.IsInRole("User");  //Get user role
+
+            if (!IsAdmin)
+            {
+                _navManager.NavigateTo("/unauthorized"); // Kick out the unauthorized hackers!!
+            }
+
+
+            //User is visitor, continue
+            Genres = await _client.GetFromJsonAsync<List<Genre>>($"{Endpoints.GenresEndpoint}");
+            Communities = await _client.GetFromJsonAsync<List<Community>>($"{Endpoints.CommunityEndpoint}");
+            Posts = await _client.GetFromJsonAsync<List<Post>>($"{Endpoints.PostEndpoint}");
+            Visitors = await _client.GetFromJsonAsync<List<Visitor>>($"{Endpoints.VisitorEndpoint}");
+            visitor = Visitors.FirstOrDefault(item => item.Email == user.Identity?.Name);
+
+            // Set default genre ID
+            post.GenreId = GetDefaultGenreId();
+            // Set default community ID
+            post.CommunityId = GetDefaultCommunityId();
+        }
+
+        private int GetDefaultGenreId()
+        {
+            var defaultGenre = Genres?.FirstOrDefault();
+            return defaultGenre?.Id ?? 0; // Use a default value if not found
+        }
+        private int GetDefaultCommunityId()
+        {
+            var defaultCommunity = Communities?.FirstOrDefault();
+            return defaultCommunity?.Id ?? 0; // Use a default value if not found
+        }
+
+        // Create post function (POST)
+        private async Task CreatePost()
+        {
+            post.UserId = visitor.Id;
+            post.Vote = 0;
+            await _client.PostAsJsonAsync(Endpoints.PostEndpoint, post);
+            _navManager.NavigateTo("/");
+        }
+
+        //Dispose function
+        public void Dispose()
+        {
+            _interceptor.DisposeEvent();
+        }
+    }
+</div>
